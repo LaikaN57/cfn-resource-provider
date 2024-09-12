@@ -1,5 +1,4 @@
-export class Hello {
-  public sayHello() {
-    return 'hello, world!';
-  }
-}
+import { ResourceProvider } from "./resource_provider";
+import { SnsEnvelope } from "./sns_envelope";
+
+export { ResourceProvider, SnsEnvelope };
