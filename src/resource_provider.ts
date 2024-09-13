@@ -1,4 +1,9 @@
-import { CloudFormationCustomResourceEvent, CloudFormationCustomResourceResourcePropertiesCommon, CloudFormationCustomResourceResponse, Context } from "aws-lambda";
+import {
+  CloudFormationCustomResourceEvent,
+  CloudFormationCustomResourceResourcePropertiesCommon,
+  CloudFormationCustomResourceResponse,
+  Context,
+} from "aws-lambda";
 import { SUCCESS, FAILED, ResponseStatus, send } from "cfn-response";
 import { validate } from "./default_injecting_validator";
 
@@ -19,6 +24,52 @@ export enum RequestType {
 export type RequestTypeType = keyof typeof RequestType;
 
 export class ResourceProvider implements IResourceProvider {
+  /**
+   * A JSON Schema which defines a proper CloudFormation request message
+   */
+  static readonly cfn_request_schema = {
+    type: "object",
+    required: [
+      "RequestType",
+      "ResponseURL",
+      "StackId",
+      "RequestId",
+      "ResourceType",
+      "LogicalResourceId",
+      "ResourceProperties",
+    ],
+    properties: {
+      RequestType: { type: "string", enum: ["Create", "Update", "Delete"] },
+      ResponseURL: {
+        type: "string",
+        // format: "uri",
+        pattern: "^https?://",
+      },
+      StackId: { type: "string" },
+      RequestId: { type: "string" },
+      ResourceType: { type: "string" },
+      LogicalResourceId: { type: "string" },
+      PhysicalResourceId: { type: "string" },
+      ResourceProperties: { type: "object" },
+    },
+  };
+
+  /**
+   * A JSON Schema which defines a proper CloudFormation response message
+   */
+  static readonly cfn_response_schema = {
+    type: "object",
+    required: ["Status", "Reason", "RequestId", "StackId", "LogicalResourceId"],
+    properties: {
+      Status: { type: "string", enum: ["SUCCESS", "FAILED"] },
+      StackId: { type: "string" },
+      RequestId: { type: "string" },
+      LogicalResourceId: { type: "string" },
+      PhysicalResourceId: { type: "string" },
+      Data: { type: "object" },
+    },
+  };
+
   request?: CloudFormationCustomResourceEvent;
   context?: Context;
   asynchronous: boolean = false;
@@ -52,7 +103,8 @@ export class ResourceProvider implements IResourceProvider {
       StackId: request.StackId,
       RequestId: request.RequestId,
       LogicalResourceId: request.LogicalResourceId,
-      PhysicalResourceId: ("PhysicalResourceId" in request) ? request.PhysicalResourceId : "",
+      PhysicalResourceId:
+        "PhysicalResourceId" in request ? request.PhysicalResourceId : "",
       // data, reason, noEcho
     };
   }
@@ -94,7 +146,9 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * returns the old custom resource properties from the request, if available.
    */
-  get old_properties(): CloudFormationCustomResourceResourcePropertiesCommon | undefined {
+  get old_properties():
+    | CloudFormationCustomResourceResourcePropertiesCommon
+    | undefined {
     if ("OldResourceProperties" in this.request!) {
       return this.request!.OldResourceProperties;
     }
@@ -248,7 +302,7 @@ export class ResourceProvider implements IResourceProvider {
     } else if (properties instanceof Object) {
       for (let key in properties) {
         properties[key] = this.heuristic_convert_property_types(
-          properties[key]
+          properties[key],
         );
       }
     }
@@ -281,7 +335,7 @@ export class ResourceProvider implements IResourceProvider {
         "ResourceType " +
           this.resource_type +
           " not supported by provider " +
-          this.custom_cfn_resource_name
+          this.custom_cfn_resource_name,
       );
     }
     return supported;
@@ -395,7 +449,10 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * handles the CloudFormation request.
    */
-  public handle(request: CloudFormationCustomResourceEvent, context: Context): CloudFormationCustomResourceResponse {
+  public handle(
+    request: CloudFormationCustomResourceEvent,
+    context: Context,
+  ): CloudFormationCustomResourceResponse {
     console.debug("received request " + JSON.stringify(request));
     this.set_request(request, context);
     this.execute();
@@ -415,7 +472,7 @@ export class ResourceProvider implements IResourceProvider {
     if (this.reason.length > 200) {
       console.error(
         "truncating Reason to 200 characters to avoid exceeding the, " +
-          this.reason
+          this.reason,
       );
       this.reason = this.reason.substring(0, 200) + "...";
     }
@@ -428,7 +485,7 @@ export class ResourceProvider implements IResourceProvider {
     this.truncate_response();
     const url = this.request!.ResponseURL;
     console.debug(
-      "sending response to " + url + " ->  " + JSON.stringify(this.response)
+      "sending response to " + url + " ->  " + JSON.stringify(this.response),
     );
     // TODO: maybe replace
     send(
@@ -437,59 +494,7 @@ export class ResourceProvider implements IResourceProvider {
       this.status,
       this.response!.Data,
       this.physical_resource_id,
-      this.no_echo
+      this.no_echo,
     );
   }
-
-  /**
-   * A JSON Schema which defines a proper CloudFormation request message
-   */
-  static readonly cfn_request_schema = {
-    type: "object",
-    required: [
-      "RequestType",
-      "ResponseURL",
-      "StackId",
-      "RequestId",
-      "ResourceType",
-      "LogicalResourceId",
-      "ResourceProperties",
-    ],
-    properties: {
-      RequestType: { type: "string", enum: ["Create", "Update", "Delete"] },
-      ResponseURL: {
-        type: "string",
-        // format: "uri",
-        pattern: "^https?://"
-      },
-      StackId: { type: "string" },
-      RequestId: { type: "string" },
-      ResourceType: { type: "string" },
-      LogicalResourceId: { type: "string" },
-      PhysicalResourceId: { type: "string" },
-      ResourceProperties: { type: "object" },
-    },
-  };
-
-  /**
-   * A JSON Schema which defines a proper CloudFormation response message
-   */
-  static readonly cfn_response_schema = {
-    type: "object",
-    required: [
-      "Status",
-      "Reason",
-      "RequestId",
-      "StackId",
-      "LogicalResourceId",
-    ],
-    properties: {
-      Status: { type: "string", enum: ["SUCCESS", "FAILED"] },
-      StackId: { type: "string" },
-      RequestId: { type: "string" },
-      LogicalResourceId: { type: "string" },
-      PhysicalResourceId: { type: "string" },
-      Data: { type: "object" },
-    },
-  };
 }

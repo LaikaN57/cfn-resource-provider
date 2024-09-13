@@ -22,4 +22,5 @@ const project = new typescript.TypeScriptProject({
   stale: true,
   docgen: true,
 });
+project.vscode?.settings.addSetting('editor.formatOnSave', true);
 project.synth();

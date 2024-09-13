@@ -50,4 +50,5 @@ junit.xml
 /lib
 /dist/
 !/.eslintrc.json
+!/.vscode/settings.json
 !/.projenrc.ts
