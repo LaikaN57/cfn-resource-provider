@@ -1,0 +1,167 @@
+import { CloudFormationCustomResourceEvent, Context } from "aws-lambda";
+import {
+  SSMClient,
+  PutParameterCommand,
+  DescribeParametersCommand,
+} from "@aws-sdk/client-ssm"; // ES Modules import
+import { IResourceProvider } from "./resource_provider";
+import { ResourceProvider, SnsEnvelope } from "./index";
+
+class SecretProvider extends ResourceProvider implements IResourceProvider {
+  ssm: SSMClient = new SSMClient();
+  request_schema = {
+    type: "object",
+    required: ["Name"],
+    properties: {
+      Name: {
+        type: "string",
+        minLength: 1,
+        pattern: "[a-zA-Z0-9_/]+",
+        description: "the name of the value in the parameters store",
+      },
+      Description: {
+        type: "string",
+        default: "",
+        description: "the description of the value in the parameter store",
+      },
+      Alphabet: {
+        type: "string",
+        default:
+          "abcdfghijklmnopqrstuvwyxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_",
+        description: "the characters from which to generate the secret",
+      },
+      ReturnSecret: {
+        type: "boolean",
+        default: false,
+        description: "return secret as attribute 'Secret'",
+      },
+      KeyAlias: {
+        type: "string",
+        default: "alias/aws/ssm",
+        description: "KMS key to use to encrypt the value",
+      },
+      Length: {
+        type: "integer",
+        minimum: 1,
+        maximum: 512,
+        default: 30,
+        description: "length of the secret",
+      },
+    },
+  };
+
+  convert_property_types() {
+    // heuristic conversion of property types
+    this.heuristic_convert_property_types(this.properties);
+
+    // - OR -
+
+    // custom conversion of property types
+    try {
+      if (
+        "Length" in this.properties &&
+        this.properties["Length"] instanceof String
+      ) {
+        this.properties["Length"] = Number(this.properties["Length"]);
+      }
+      if (
+        "ReturnSecret" in this.properties &&
+        this.properties["ReturnSecret"] instanceof String
+      ) {
+        this.properties["ReturnSecret"] = Boolean(
+          this.properties["ReturnSecret"]
+        );
+      }
+    } catch (e) {
+      console.error("failed to convert property types " + e);
+    }
+  }
+
+  create() {
+    try {
+      const value = this.generateRandomString();
+      var arn;
+      // TOOD: check if this is the correct way to wait for the response
+      this.ssm
+        .send(
+          new PutParameterCommand({
+            Name: this.get("Name", ""),
+            KeyId: this.get("KeyAlias", ""),
+            Type: "SecureString",
+            Overwrite: false,
+            Value: value,
+          })
+        )
+        .then((_) => {
+          this.ssm
+            .send(
+              new DescribeParametersCommand({
+                ParameterFilters: [
+                  {
+                    Key: "Name",
+                    Option: "Equals",
+                    Values: [this.get("Name", "")],
+                  },
+                ],
+              })
+            )
+            .then((response) => {
+              arn = response.Parameters![0].ARN;
+            });
+        });
+      this.set_attribute("Arn", arn);
+      if (this.get("ReturnSecret", "")) {
+        this.set_attribute("Secret", value);
+      }
+
+      this.physical_resource_id = arn;
+    } catch (e) {
+      this.physical_resource_id = "could-not-create";
+      this.fail(e);
+    }
+  }
+
+  update() {
+    // ...
+  }
+
+  delete() {
+    // ...
+  }
+
+  /**
+   * IGNORE - Helper function to generate a random string.
+   */
+  private generateRandomString(): string {
+    const alphabet: string = this.get(
+      "Alphabet",
+      this.request_schema.properties.Alphabet.default
+    );
+    const length: number = this.get(
+      "Length",
+      this.request_schema.properties.Length.default.toString()
+    );
+    let result: string = "";
+
+    for (let i = 0; i < length; i++) {
+      result += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+    }
+
+    return result;
+  }
+}
+
+const provider = new SecretProvider();
+
+// Lambda-backed custom resource handler
+function handle(request: CloudFormationCustomResourceEvent, context: Context) {
+  provider.handle(request, context);
+}
+
+// - OR -
+
+// SNS-backed custom resource handler
+function handler(request, context: Context) {
+  const provider = new SnsEnvelope(new SecretProvider());
+  provider.handle(request, context);
+}

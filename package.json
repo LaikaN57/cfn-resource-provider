@@ -47,7 +47,8 @@
     "@types/aws-lambda": "^8.10.145",
     "@types/cfn-response": "^1.0.8",
     "ajv": "^8.17.1",
-    "aws-lambda": "^1.0.7"
+    "aws-lambda": "^1.0.7",
+    "cfn-response": "^1.0.1"
   },
   "main": "lib/index.js",
   "license": "Apache-2.0",

@@ -9,6 +9,7 @@ const project = new typescript.TypeScriptProject({
     "@types/cfn-response",
     "ajv",
     "aws-lambda",
+    "cfn-response"
   ],
   description: 'Base class for AWS CloudFormation Custom Resource Providers.',
   devDeps: [

@@ -2261,6 +2261,11 @@ ccount@^2.0.0:
   resolved "https://registry.yarnpkg.com/ccount/-/ccount-2.0.1.tgz#17a3bf82302e0870d6da43a01311a8bc02a3ecf5"
   integrity sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==
 
+cfn-response@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/cfn-response/-/cfn-response-1.0.1.tgz#a8ec03950c0683c51495e8ca680d9dc0b884b137"
+  integrity sha512-mHfgHUcGpIbmioV/gQ//5V+b8em/ZKFwAgzmbycflJ1q0AU66wlhIgarkYc4JXGgIca+0lxg+XEKO4ZwyZedaw==
+
 chalk@^2.4.2:
   version "2.4.2"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-2.4.2.tgz#cd42541677a54333cf541a49108c1432b44c9424"

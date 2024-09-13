@@ -1,4 +1,4 @@
-import { Context } from "aws-lambda";
+import { CloudFormationCustomResourceEvent, CloudFormationCustomResourceResponse, Context, SNSEvent } from "aws-lambda";
 import { ResourceProvider } from "./resource_provider";
 import { Ajv } from "ajv";
 
@@ -42,7 +42,7 @@ export class SnsEnvelope {
     this.provider = resource_provider;
   }
 
-  handle(event: object, context: Context): Array<object> {
+  handle(event: SNSEvent, context: Context): CloudFormationCustomResourceResponse[] {
     /**
      * SNS payloads can hold 1 or more messages, so we need to handle each message as a custom resource.
      */
@@ -52,10 +52,10 @@ export class SnsEnvelope {
       );
     }
 
-    const responses: object[] = [];
+    const responses = [];
 
     for (const record of event["Records"]) {
-      const request = JSON.parse(record["Sns"]["Message"]);
+      const request: CloudFormationCustomResourceEvent = JSON.parse(record["Sns"]["Message"]);
 
       responses.push(this.provider.handle(request, context));
     }
