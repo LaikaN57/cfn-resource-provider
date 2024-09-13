@@ -375,8 +375,8 @@ export class ResourceProvider implements IResourceProvider {
    * sets response status to FAILED
    */
   fail(reason: string) {
-    this.response!["Status"] = "FAILED";
-    if (reason) this.response!["Reason"] = reason;
+    this.response!.Status = "FAILED";
+    if (reason) this.response!.Reason = reason;
   }
 
   /**
