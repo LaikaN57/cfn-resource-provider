@@ -1,7 +1,7 @@
-import { typescript } from 'projen';
+import { typescript } from "projen";
 const project = new typescript.TypeScriptProject({
-  defaultReleaseBranch: 'main',
-  name: 'cfn-resource-provider',
+  defaultReleaseBranch: "main",
+  name: "cfn-resource-provider",
   projenrcTs: true,
   deps: [
     "@types/ajv",
@@ -9,18 +9,14 @@ const project = new typescript.TypeScriptProject({
     "@types/cfn-response",
     "ajv",
     "aws-lambda",
-    "cfn-response"
+    "cfn-response",
   ],
-  description: 'Base class for AWS CloudFormation Custom Resource Providers.',
-  devDeps: [
-    "@aws-sdk/client-ssm",
-  ],
-  // packageName: undefined,  /* The "name" in package.json. */
-  vscode: true,
+  description: "Base class for AWS CloudFormation Custom Resource Providers.",
+  devDeps: ["@aws-sdk/client-ssm"],
   dependabot: true,
   prettier: true,
   stale: true,
   docgen: true,
 });
-project.vscode?.settings.addSetting('editor.formatOnSave', true);
+project.vscode?.settings.addSetting("editor.formatOnSave", true);
 project.synth();
