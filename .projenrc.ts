@@ -17,6 +17,13 @@ const project = new typescript.TypeScriptProject({
   prettier: true,
   stale: true,
   docgen: true,
+  githubOptions: {
+    pullRequestLintOptions: {
+      semanticTitleOptions: {
+        types: ["feat", "fix", "chore", "build"],
+      },
+    },
+  },
 });
 project.vscode?.settings.addSetting("editor.formatOnSave", true);
 project.synth();
