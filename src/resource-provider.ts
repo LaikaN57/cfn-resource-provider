@@ -57,7 +57,7 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * A JSON Schema which defines a proper CloudFormation response message
    */
-  static readonly cfnResponseSchema = {
+  public static readonly cfnResponseSchema: object = {
     type: "object",
     required: ["Status", "Reason", "RequestId", "StackId", "LogicalResourceId"],
     properties: {
@@ -73,27 +73,27 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * The CloudFormation request.
    */
-  request?: CloudFormationCustomResourceEvent;
+  protected request?: CloudFormationCustomResourceEvent;
 
   /**
    * The Lambda context.
    */
-  context?: Context;
+  protected context?: Context;
 
   /**
    * A boolean indicating whether the request is asynchronous.
    */
-  asynchronous: boolean = false;
+  private asynchronous: boolean = false;
 
   /**
    * The CloudFormation response.
    */
-  response?: CloudFormationCustomResourceResponse;
+  protected response?: CloudFormationCustomResourceResponse;
 
   /**
    * default json schema for request['ResourceProperties']. Override in your subclass.
    */
-  resourcePropertiesSchema: object = { type: "object" };
+  public readonly resourcePropertiesSchema: object = { type: "object" };
 
   /**
    * The CloudFormation custom resource name.
@@ -101,6 +101,11 @@ export class ResourceProvider implements IResourceProvider {
   get customCfnResourceName(): string {
     return "Custom::" + this.constructor.name.replace("Provider", "");
   }
+
+  /**
+   * Constructs a new instance of the ResourceProvider class.
+   */
+  public constructor() {}
 
   /**
    * Returns true if the resource type is supported by the provider.
