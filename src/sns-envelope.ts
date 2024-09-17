@@ -17,7 +17,7 @@ export class SnsEnvelope {
   /**
    * The provider for the SNS envelope.
    */
-  provider: ResourceProvider;
+  private provider: ResourceProvider;
 
   /**
    * Constructs a new instance of the SnsEnvelope class.
@@ -37,7 +37,7 @@ export class SnsEnvelope {
    * @param context - The AWS Lambda context object.
    * @returns An array of CloudFormationCustomResourceResponse objects.
    */
-  handle(
+  public handle(
     event: SNSEvent,
     context: Context,
   ): CloudFormationCustomResourceResponse[] {
