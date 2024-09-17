@@ -1,3 +1,7 @@
+/**
+ *
+ */
+
 import {
   CloudFormationCustomResourceEvent,
   CloudFormationCustomResourceResourcePropertiesCommon,
@@ -5,59 +9,55 @@ import {
   Context,
 } from "aws-lambda";
 import { SUCCESS, FAILED, ResponseStatus, send } from "cfn-response";
-import { validate } from "./default_injecting_validator";
+import { validate } from "./utils/default-injecting-validator";
 
+/**
+ * Interface for a CloudFormation custom resource provider.
+ */
 export interface IResourceProvider {
-  request_schema: object;
+  /**
+   * The CloudFormation request.
+   */
+  resourcePropertiesSchema: object;
 
+  /**
+   * The create method.
+   */
   create(): void;
+
+  /**
+   * The update method.
+   */
   update(): void;
+
+  /**
+   * The delete method.
+   */
   delete(): void;
 }
 
+/**
+ * Enum for the CloudFormation request type.
+ */
 export enum RequestType {
   Create = "Create",
   Update = "Update",
   Delete = "Delete",
 }
 
+/**
+ * Type for the CloudFormation request type.
+ */
 export type RequestTypeType = keyof typeof RequestType;
 
+/**
+ * Represents a CloudFormation custom resource provider.
+ */
 export class ResourceProvider implements IResourceProvider {
-  /**
-   * A JSON Schema which defines a proper CloudFormation request message
-   */
-  static readonly cfn_request_schema = {
-    type: "object",
-    required: [
-      "RequestType",
-      "ResponseURL",
-      "StackId",
-      "RequestId",
-      "ResourceType",
-      "LogicalResourceId",
-      "ResourceProperties",
-    ],
-    properties: {
-      RequestType: { type: "string", enum: ["Create", "Update", "Delete"] },
-      ResponseURL: {
-        type: "string",
-        // format: "uri",
-        pattern: "^https?://",
-      },
-      StackId: { type: "string" },
-      RequestId: { type: "string" },
-      ResourceType: { type: "string" },
-      LogicalResourceId: { type: "string" },
-      PhysicalResourceId: { type: "string" },
-      ResourceProperties: { type: "object" },
-    },
-  };
-
   /**
    * A JSON Schema which defines a proper CloudFormation response message
    */
-  static readonly cfn_response_schema = {
+  static readonly cfnResponseSchema = {
     type: "object",
     required: ["Status", "Reason", "RequestId", "StackId", "LogicalResourceId"],
     properties: {
@@ -70,21 +70,43 @@ export class ResourceProvider implements IResourceProvider {
     },
   };
 
+  /**
+   * The CloudFormation request.
+   */
   request?: CloudFormationCustomResourceEvent;
+
+  /**
+   * The Lambda context.
+   */
   context?: Context;
+
+  /**
+   * A boolean indicating whether the request is asynchronous.
+   */
   asynchronous: boolean = false;
+
+  /**
+   * The CloudFormation response.
+   */
   response?: CloudFormationCustomResourceResponse;
+
   /**
    * default json schema for request['ResourceProperties']. Override in your subclass.
    */
-  request_schema: object = { type: "object" };
+  resourcePropertiesSchema: object = { type: "object" };
 
-  get custom_cfn_resource_name(): string {
+  /**
+   * The CloudFormation custom resource name.
+   */
+  get customCfnResourceName(): string {
     return "Custom::" + this.constructor.name.replace("Provider", "");
   }
 
-  is_supported_resource_type(): boolean {
-    return this.resource_type == this.custom_cfn_resource_name;
+  /**
+   * Returns true if the resource type is supported by the provider.
+   */
+  isSupportedResourceType(): boolean {
+    return this.resourceType == this.customCfnResourceName;
   }
 
   /**
@@ -93,7 +115,7 @@ export class ResourceProvider implements IResourceProvider {
    * @param request the CloudFormation request
    * @param context the lambda context
    */
-  set_request(request: CloudFormationCustomResourceEvent, context: Context) {
+  setRequest(request: CloudFormationCustomResourceEvent, context: Context) {
     this.request = request;
     this.context = context;
     this.asynchronous = false;
@@ -112,28 +134,28 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * returns the custom resource property `name` if it exists, otherwise `default`
    * @param name
-   * @param _default
+   * @param defaultValue
    */
-  get(name: string, _default: string) {
+  get(name: string, defaultValue: string) {
     if (name in this.properties) {
       return this.properties[name];
     }
-    return _default;
+    return defaultValue;
   }
 
   /**
    * returns the old resource property `name` if it exists, otherwise `default`
    * @param name
-   * @param _default
+   * @param defaultValue
    */
-  get_old(name: string, _default: string) {
-    if (this.old_properties === undefined) {
-      return _default;
+  getOld(name: string, defaultValue: string) {
+    if (this.oldProperties === undefined) {
+      return defaultValue;
     }
-    if (name in this.old_properties) {
-      return this.old_properties![name];
+    if (name in this.oldProperties) {
+      return this.oldProperties![name];
     }
-    return _default;
+    return defaultValue;
   }
 
   /**
@@ -146,7 +168,7 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * returns the old custom resource properties from the request, if available.
    */
-  get old_properties():
+  get oldProperties():
     | CloudFormationCustomResourceResourcePropertiesCommon
     | undefined {
     if ("OldResourceProperties" in this.request!) {
@@ -158,46 +180,46 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * returns the LogicaLResourceId from the request.
    */
-  get logical_resource_id(): string {
+  get logicalResourceId(): string {
     return this.request!.LogicalResourceId;
   }
 
   /**
    * returns the StackId from the request.
    */
-  get stack_id(): string {
+  get stackId(): string {
     return this.request!.StackId;
   }
 
   /**
    * returns the RequestId from the request.
    */
-  get request_id(): string {
+  get requestId(): string {
     return this.request!.RequestId;
   }
 
   /**
    * returns the ResponseURL from the request.
    */
-  get response_url(): string {
+  get responseUrl(): string {
     return this.request!.ResponseURL;
   }
 
   /**
    * returns the PhysicalResourceId from the response. Initialized from request.
    */
-  get physical_resource_id(): string {
+  get physicalResourceId(): string {
     return this.response!.PhysicalResourceId;
   }
 
-  set physical_resource_id(new_resource_id: string) {
-    this.response!.PhysicalResourceId = new_resource_id;
+  set physicalResourceId(newResourceId: string) {
+    this.response!.PhysicalResourceId = newResourceId;
   }
 
   /**
    * returns the CloudFormation request type.
    */
-  get request_type(): RequestTypeType {
+  get requestType(): RequestTypeType {
     return RequestType[this.request!.RequestType as RequestTypeType];
   }
 
@@ -226,43 +248,30 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * returns the CloudFormation resource type on which to perform the request.
    */
-  get resource_type(): string {
+  get resourceType(): string {
     return this.request!.ResourceType;
   }
 
   /**
    * returns the current value of NoEcho, or None if not set.
    */
-  get no_echo(): boolean | undefined {
+  get noEcho(): boolean | undefined {
     return this.response!.NoEcho;
   }
 
   /**
    * sets the NoEcho in the response to `value`.
    */
-  set no_echo(value: boolean) {
+  set noEcho(value: boolean) {
     this.response!.NoEcho = value;
-  }
-
-  /**
-   * returns true when self.request is a valid CloudFormation custom resource request, otherwise false.
-   * if false, sets self.status and self.reason.
-   */
-  is_valid_cfn_request(): boolean {
-    const valid = validate(this.request, ResourceProvider.cfn_request_schema);
-    if (!valid) {
-      // TODO: improve error message with why it failed validation, requires upstream changes
-      this.fail("invalid CloudFormation Request received: " + this.request);
-    }
-    return valid;
   }
 
   /**
    * returns true when self.response is a valid CloudFormation custom resource response, otherwise false.
    * if false, it logs the reason.
    */
-  is_valid_cfn_response(): boolean {
-    const valid = validate(this.response, ResourceProvider.cfn_response_schema);
+  isValidCfnResponse(): boolean {
+    const valid = validate(this.response, ResourceProvider.cfnResponseSchema);
     if (!valid) {
       // TODO: improve error message with why it failed validation, requires upstream changes
       console.warn("invalid CloudFormation response created: " + this.response);
@@ -276,13 +285,13 @@ export class ResourceProvider implements IResourceProvider {
    *
    * one day we will make it a generic method, not now...
    */
-  convert_property_types() {}
+  convertPropertyTypes() {}
 
   /**
    * heuristic type conversion of string values in `properties`.
    * @param properties
    */
-  heuristic_convert_property_types(properties: any): any {
+  heuristicConvertPropertyTypes(properties: any): any {
     if (properties instanceof String) {
       const v = String(properties);
       if (v == "true") {
@@ -297,26 +306,24 @@ export class ResourceProvider implements IResourceProvider {
     } else if (properties instanceof Array) {
       // TOOD: check if this is safe to do
       for (let i = 0; i < properties.length; i++) {
-        properties[i] = this.heuristic_convert_property_types(properties[i]);
+        properties[i] = this.heuristicConvertPropertyTypes(properties[i]);
       }
     } else if (properties instanceof Object) {
       for (let key in properties) {
-        properties[key] = this.heuristic_convert_property_types(
-          properties[key],
-        );
+        properties[key] = this.heuristicConvertPropertyTypes(properties[key]);
       }
     }
     return properties;
   }
 
   /**
-   * returns true if `self.properties` is a valid request as specified by the JSON schema self.request_schema, otherwise False.
+   * returns true if `self.properties` is a valid request as specified by the JSON schema self.resourcePropertiesSchema, otherwise False.
    * Optional properties with a default value in the schema will be added to self.porperties.
    * If false, self.reason and self.status are set.
    */
-  is_valid_request(): boolean {
-    this.convert_property_types();
-    const valid = validate(this.properties, this.request_schema);
+  isValidRequest(): boolean {
+    this.convertPropertyTypes();
+    const valid = validate(this.properties, this.resourcePropertiesSchema);
     if (!valid) {
       // TODO: improve error message with why it failed validation, requires upstream changes
       this.fail("invalid resource properties: " + this.properties);
@@ -325,17 +332,17 @@ export class ResourceProvider implements IResourceProvider {
   }
 
   /**
-   * returns true if request is `is_supported_resource_type`.
+   * returns true if request is `isSupportedResourceType`.
    * If false, self.reason and self.status are set.
    */
-  is_supported_request(): boolean {
-    const supported = this.is_supported_resource_type();
+  isSupportedRequest(): boolean {
+    const supported = this.isSupportedResourceType();
     if (!supported) {
       this.fail(
         "ResourceType " +
-          this.resource_type +
+          this.resourceType +
           " not supported by provider " +
-          this.custom_cfn_resource_name,
+          this.customCfnResourceName,
       );
     }
     return supported;
@@ -344,7 +351,7 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * sets the attribute `name` to `value`. This value can be retrieved using "Fn::GetAtt".
    */
-  set_attribute(name: string, value: any) {
+  setAttribute(name: string, value: any) {
     if (this.response!.Data === undefined) {
       this.response!.Data = {};
     }
@@ -354,7 +361,7 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * returns the value of the attribute `name`.
    */
-  get_attribute(name: string): any | undefined {
+  getAttribute(name: string): any | undefined {
     if (this.response!.Data === undefined) {
       return undefined;
     }
@@ -405,23 +412,19 @@ export class ResourceProvider implements IResourceProvider {
    */
   execute() {
     try {
-      if (
-        this.is_supported_request() &&
-        this.is_valid_cfn_request() &&
-        this.is_valid_request()
-      ) {
-        if (this.request_type == "Create") {
+      if (this.isSupportedRequest() && this.isValidRequest()) {
+        if (this.requestType == "Create") {
           this.create();
-        } else if (this.request_type == "Update") {
+        } else if (this.requestType == "Update") {
           this.update();
         } else {
           // TODO: assert request type is "Delete"
           this.delete();
         }
-        this.is_valid_cfn_response();
+        this.isValidCfnResponse();
       } else if (
         "RequestType" in this.request! &&
-        this.request_type == "Delete"
+        this.requestType == "Delete"
       ) {
         /**
          * failure to delete an invalid request hangs your cfn...
@@ -434,13 +437,13 @@ export class ResourceProvider implements IResourceProvider {
       }
       console.error(e);
     } finally {
-      if (!this.physical_resource_id && this.status == FAILED) {
+      if (!this.physicalResourceId && this.status == FAILED) {
         /**
-         * CFN will complain if the physical_resource_id is not set on failure
+         * CFN will complain if the physicalResourceId is not set on failure
          * to create the physical resource. :-(
          */
-        if (this.request_type == "Create") {
-          this.physical_resource_id = "could-not-create";
+        if (this.requestType == "Create") {
+          this.physicalResourceId = "could-not-create";
         }
       }
     }
@@ -454,18 +457,18 @@ export class ResourceProvider implements IResourceProvider {
     context: Context,
   ): CloudFormationCustomResourceResponse {
     console.debug("received request " + JSON.stringify(request));
-    this.set_request(request, context);
+    this.setRequest(request, context);
     this.execute();
     if (!this.asynchronous) {
-      this.send_response();
+      this.sendResponse();
     }
     return this.response!;
   }
 
   /**
-   *
+   * truncates the response to 200 characters to avoid exceeding the limit.
    */
-  private truncate_response() {
+  private truncateResponse() {
     if (!this.reason) {
       return;
     }
@@ -481,8 +484,8 @@ export class ResourceProvider implements IResourceProvider {
   /**
    * sends the response to `ResponseURL`
    */
-  send_response() {
-    this.truncate_response();
+  sendResponse() {
+    this.truncateResponse();
     const url = this.request!.ResponseURL;
     console.debug(
       "sending response to " + url + " ->  " + JSON.stringify(this.response),
@@ -493,8 +496,8 @@ export class ResourceProvider implements IResourceProvider {
       this.context!,
       this.status,
       this.response!.Data,
-      this.physical_resource_id,
-      this.no_echo,
+      this.physicalResourceId,
+      this.noEcho,
     );
   }
 }
