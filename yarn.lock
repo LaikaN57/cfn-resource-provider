@@ -1651,9 +1651,9 @@
     "@babel/types" "^7.20.7"
 
 "@types/cfn-response@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/@types/cfn-response/-/cfn-response-1.0.8.tgz#d32171f89700a89cb52ce716cb33ff27bd852106"
-  integrity sha512-b9YttPRwTVcn/r65BcxrXqrVXpBtns3IlwPgE5XfzFoXBSBhimw7ZTbpvdsP39nsxVTmvV7IUN34/9FBQyfe2w==
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@types/cfn-response/-/cfn-response-1.0.9.tgz#0e31da66a1e3ee6a9526274325ed1488a5856ed7"
+  integrity sha512-jhGlTGXTbqzTZZScjZxUDDL/f2xs4RuENyOBqu4cfLXv9EHMfyCWx18mXl2jtmHHqmjZgkpa8ifCUu4zf5sRJQ==
   dependencies:
     "@types/aws-lambda" "*"
 
