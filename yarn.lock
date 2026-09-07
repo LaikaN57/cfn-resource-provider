@@ -1613,9 +1613,9 @@
     ajv "*"
 
 "@types/aws-lambda@*", "@types/aws-lambda@^8.10.145":
-  version "8.10.145"
-  resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.145.tgz#b2d31a987f4888e5553ff1819f57cafa475594d9"
-  integrity sha512-dtByW6WiFk5W5Jfgz1VM+YPA21xMXTuSFoLYIDY0L44jDLLflVPtZkYuu3/YxpGcvjzKFBZLU+GyKjR0HOYtyw==
+  version "8.10.163"
+  resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.163.tgz#4639d5b950a56c37afe62f5525921f69017dcd82"
+  integrity sha512-+4zuoEB3S8RIhimtOFT7zAEk2SbpwrKjjGl9CyYnQR6k08uynxfauIIB0pDU1ssr05F8oyGiETwpn+8eXZMqPw==
 
 "@types/babel__core@^7.1.14":
   version "7.20.5"
